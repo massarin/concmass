@@ -2,26 +2,31 @@
 Generate diagnostic figures for concmass.
 Run with: python make_figures.py
 """
+
 import timeit
 import warnings
 from pathlib import Path
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from astropy.cosmology import Planck18
 from colossus.cosmology import cosmology as col_cosmo
 from colossus.halo import concentration as col_conc
 
 from concmass import conc
-from concmass.build_tables import _PLANCK18_SIGMA8, _PLANCK18_NS, build_table
+from concmass.build_tables import _PLANCK18_NS, _PLANCK18_SIGMA8, build_table
 
 MDEF = "200c"
 FIGURES = Path("figures")
 
 col_cosmo.addCosmology(
-    "planck18", flat=True,
-    H0=float(Planck18.H0.value), Om0=float(Planck18.Om0), Ob0=float(Planck18.Ob0),
-    sigma8=_PLANCK18_SIGMA8, ns=_PLANCK18_NS,
+    "planck18",
+    flat=True,
+    H0=float(Planck18.H0.value),
+    Om0=float(Planck18.Om0),
+    Ob0=float(Planck18.Ob0),
+    sigma8=_PLANCK18_SIGMA8,
+    ns=_PLANCK18_NS,
 )
 col_cosmo.setCosmology("planck18", persistence="r")
 
@@ -38,6 +43,7 @@ def colossus(M, z, statistic="median"):
 # Figure 1 — speedup
 # ---------------------------------------------------------------------------
 
+
 def fig_speedup():
     sizes = [1, 5, 10, 50, 100, 500, 1000, 5000, 10000]
     t_col, t_interp = [], []
@@ -47,14 +53,22 @@ def fig_speedup():
         z = np.linspace(0.1, 3.0, n)
         reps_col = max(1, min(5, 500 // n))
         reps_int = max(10, min(200, 5000 // n))
-        tc = timeit.timeit(
-            lambda: [colossus(np.array([mi]), float(zi)) for mi, zi in zip(M, z)],
-            number=reps_col,
-        ) / reps_col
-        ti = timeit.timeit(lambda: conc("diemer19", M, z, TABLE), number=reps_int) / reps_int
+        tc = (
+            timeit.timeit(
+                lambda: [colossus(np.array([mi]), float(zi)) for mi, zi in zip(M, z)],
+                number=reps_col,
+            )
+            / reps_col
+        )
+        ti = (
+            timeit.timeit(lambda: conc("diemer19", M, z, TABLE), number=reps_int)
+            / reps_int
+        )
         t_col.append(tc * 1e3)
         t_interp.append(ti * 1e3)
-        print(f"n={n:6d}  colossus={tc*1e3:.2f}ms  interp={ti*1e3:.3f}ms  speedup={tc/ti:.0f}x")
+        print(
+            f"n={n:6d}  colossus={tc * 1e3:.2f}ms  concmass={ti * 1e3:.3f}ms  speedup={tc / ti:.0f}x"
+        )
 
     t_col, t_interp = np.array(t_col), np.array(t_interp)
     speedup = t_col / t_interp
@@ -87,6 +101,7 @@ def fig_speedup():
 # Figure 2 — residuals
 # ---------------------------------------------------------------------------
 
+
 def fig_residuals():
     M_grid = np.logspace(10.2, 15.8, 120)
     z_list = [0.0, 0.5, 1.0, 2.0, 4.0]
@@ -106,7 +121,9 @@ def fig_residuals():
         ax.axhline(1, color="k", linestyle="--", linewidth=0.6, alpha=0.4)
         ax.axhline(-1, color="k", linestyle="--", linewidth=0.6, alpha=0.4)
         ax.set_xlabel(r"$M\ [M_\odot/h]$")
-        ax.set_ylabel(r"$(c_\mathrm{interp} - c_\mathrm{colossus})\,/\,c_\mathrm{colossus}\ [\times 10^{-4}]$")
+        ax.set_ylabel(
+            r"$(c_\mathrm{concmass} - c_\mathrm{colossus})\,/\,c_\mathrm{colossus}\ [\times 10^{-4}]$"
+        )
         ax.set_title(f"Residuals — {stat}")
         ax.legend(fontsize=8)
         ax.grid(True, alpha=0.3)

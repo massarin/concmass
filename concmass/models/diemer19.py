@@ -2,7 +2,7 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
 
-def conc_diemer19(M, z, table: RegularGridInterpolator):
+def conc_from_table(M, z, table: RegularGridInterpolator):
     """
     Parameters
     ----------

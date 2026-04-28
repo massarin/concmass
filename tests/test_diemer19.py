@@ -74,6 +74,18 @@ def test_out_of_bounds_raises(tables):
         conc("diemer19", 1e9, 0.0, tables["median"])
 
 
+def test_diemer15_smoke(set_colossus_cosmology):
+    """Other models work through the same generic dispatch + interpolator."""
+    table = build_table(model="diemer15")
+    M = np.logspace(11, 15, 8)
+    z = 1.0
+    got = conc("diemer15", M, np.full_like(M, z), table)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ref = col_conc.concentration(M, MDEF, z, model="diemer15", statistic="median")
+    np.testing.assert_allclose(got, ref, rtol=RTOL)
+
+
 def test_speedup_vs_colossus(tables):
     n = 1000
     M = np.logspace(11, 15, n)
